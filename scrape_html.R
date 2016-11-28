@@ -1,3 +1,6 @@
+## NB this scrape doesn't correctly download files which contain an ampersand
+## in the file name
+
 library(rvest)
 library(stringr)
 library(curl)
