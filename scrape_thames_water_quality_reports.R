@@ -97,6 +97,14 @@ tw_data$No.Samples.Failing <- as.numeric(as.character(tw_data$No.Samples.Failing
 tw_data$Population         <- as.numeric(tw_data$Population)
 tw_data$Zone               <- as.numeric(tw_data$Zone)
 
+postcodes <- unique(tw_data[!is.na(tw_data$Postcode),c(10,12)])
+
+
+# tw_data$Location           <- factor(tw_data$Location, levels = sort(unique(as.character(tw_data$Location))))
+# tw_data$Postcode           <- factor(tw_data$Postcode, levels = sort(unique(as.character(tw_data$Postcode))))
+
+
+
 # try some plots
 ## how many people have hard water, and does it change year to year?
 p <- ggplot(tw_data[tw_data$Observation == "Total Hardness as CaCO3",], aes(Population, Mean, colour = Year)) + geom_point()
