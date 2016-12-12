@@ -4,6 +4,7 @@
 
 library(pdftools)
 library(stringi)
+library(ggplot2)
 
 source("water_reports_headings.R")
 
@@ -29,6 +30,10 @@ tw_data_2014 <- do.call(rbind,
                                textlines[[2]][line_s2:line_f2]
                              )
                            )
+## try the new regexp
+# print(dim(
+# do.call(rbind,strsplit(body_lines, split = "(?<![A-z0-9\\.&\\-()]) {1,}| {1,}(?=[>])", perl = T)))
+# )
 # the table wouldn't split apart with one regexp so I did it using 2 and joined them
 ## first 2 columns
                            variable_cols <- do.call(rbind,lapply(strsplit(body_lines," {2,}"),function(x){x[1:2]}))
@@ -36,6 +41,7 @@ tw_data_2014 <- do.call(rbind,
                            values_cols      <- do.call(rbind,lapply(strsplit(body_lines," {1,}"),function(x){a<-length(x);b<-a-6;x[b:a]}))
                            tw_report        <- as.data.frame(cbind(variable_cols,values_cols))
 # process header into columns
+                           # tw_report        <- as.data.frame(do.call(rbind,strsplit(body_lines, split = "(?<![A-z0-9\\.&\\-()]) {1,}| {1,}(?=[>])", perl = T)))
                            tw_report$Location <- stri_trans_totitle(header[2])
                            tw_report$zone     <- header[3]
                            tw_report$postcode <- header[1]
@@ -65,9 +71,25 @@ tw_data_2015 <- do.call(rbind,
                               textlines[[5]][line_s5:line_f5]
                             )
                           )
+## try the new regexp
+# print(dim(
+# do.call(rbind,strsplit(body_lines, split = "(?<![A-z0-9\\.&\\-()]) {1,}| {1,}(?=[>])", perl = T)))
+# )
                           variable_cols <- do.call(rbind,lapply(strsplit(body_lines," {2,}"),function(x){x[1:2]}))
                           values_cols      <- do.call(rbind,lapply(strsplit(body_lines," {1,}"),function(x){a<-length(x);b<-a-6;x[b:a]}))
                           tw_report        <- as.data.frame(cbind(variable_cols,values_cols))
+
+
+# maybe try (?<=[0-9]) {1,}| {2,}
+#these are wrong with current
+# [1] "2015/2015%20WQ%20Report_Z0078_New%20Cross.pdf"
+# [1] "2015/2015%20WQ%20Report_Z0117_Balham.pdf"
+# [1] "2015/2015%20WQ%20Report_Z0118_Brixton.pdf"
+# [1] "2015/2015%20WQ%20Report_Z0121_Merton.pdf"
+# [1] "2015/2015%20WQ%20Report_Z0327_Plumstead.pdf"
+# [1] "2015/2015%20WQ%20Report_Z0334_Wandsworth%20East.pdf"
+                          
+                          # tw_report        <- as.data.frame(do.call(rbind,strsplit(body_lines, split = "(?<![A-z0-9\\.&\\-()]) {1,}| {1,}(?=[>])", perl = T)))
                           tw_report$Location <- stri_trans_totitle(header[2])
                           tw_report$zone     <- header[1]
                           tw_report$postcode <- NA
@@ -79,6 +101,8 @@ tw_data_2015 <- do.call(rbind,
 tw_data <- rbind(tw_data_2014, tw_data_2015)
 names(tw_data)<- water_report_headings
 
+tw_data$Observation <- trimws(tw_data$Observation)
+tw_data$Units       <- trimws(tw_data$Units)
 # observation name has changed
 tw_data$Observation[tw_data$Observation == "Hardness (Total) as CaCO3"] <- "Total Hardness as CaCO3"
 
@@ -87,7 +111,7 @@ tw_data$Regulatory.Limit <- as.character(tw_data$Regulatory.Limit)
 # this is a fudge to get a numeric value. I'm disgusted!
 tw_data$Regulatory.Limit[tw_data$Regulatory.Limit == "6.50-9.50"] <- 8
 tw_data$Regulatory.Limit[grepl("N/A|n/a|-",tw_data$Regulatory.Limit)] <- NA
-# tw_data$Regulatory.Limit2   <- as.numeric(gsub("[<>]","",as.character(tw_data$Regulatory.Limit)))
+tw_data$Regulatory.Limit   <- as.numeric(gsub("[<>]","",as.character(tw_data$Regulatory.Limit)))
 tw_data$Minimum            <- as.numeric(gsub("[<>]","",as.character(tw_data$Minimum)))
 tw_data$Mean               <- as.numeric(gsub("[<>]","",as.character(tw_data$Mean)))
 tw_data$Max                <- as.numeric(gsub("[<>]","",as.character(tw_data$Max)))
@@ -107,7 +131,7 @@ postcodes <- unique(tw_data[!is.na(tw_data$Postcode),c(10,12)])
 
 # try some plots
 ## how many people have hard water, and does it change year to year?
-p <- ggplot(tw_data[tw_data$Observation == "Total Hardness as CaCO3",], aes(Population, Mean, colour = Year)) + geom_point()
+p <- ggplot(tw_data[tw_data$Observation == "Hardness (Total) as CaCO3",], aes(Population, Mean, colour = Year)) + geom_point()
 ## who has the highest mean levels of Cyanide (Blackheath)
 q <- ggplot(tw_data[tw_data$Observation == "Cyanide as CN",], aes(Population, Mean, colour = Year)) + geom_point()
 # look for anomalies in the elements. Lead levels are often high.
